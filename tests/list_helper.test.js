@@ -141,7 +141,7 @@ describe('favorite blog', () => {
 
   test('of empty list is null', () => {
     expect(listHelper.favoriteBlog([]))
-      .toEqual(null)
+      .toBeNull()
   })
 
   test('of list with only one blog to equal the blog', () => {
@@ -165,6 +165,50 @@ describe('favorite blog', () => {
     expect(listHelper.favoriteBlog(listWithMultipleBlogsWithEqualLikes))
       .toHaveProperty('likes', 12)
   })
+})
 
+describe('most blogs', () => {
+  test('of empty list returns null', () => {
+    expect(listHelper.mostBlogs([]))
+      .toBeNull()
+  })
 
+  test('of list with only one blog to return the author of the blog with one blog', () => {
+    expect(listHelper.mostBlogs(listWithOneBlog))
+      .toEqual({
+        author: 'Edsger W. Dijkstra',
+        blogs: 1
+      })
+  })
+
+  test('of list with multiple blogs equal correct author and count', () => {
+    expect(listHelper.mostBlogs(listWithMultipleBlogs))
+      .toEqual({
+        author: 'Robert C. Martin',
+        blogs: 3
+      })
+  })
+})
+
+describe('most likes', () => {
+  test('of empty list returns null', () => {
+    expect(listHelper.mostLikes([]))
+      .toBeNull()
+  })
+
+  test('of list with only one blog returns the author of the blog with correct amount of likes', () => {
+    expect(listHelper.mostLikes(listWithOneBlog))
+      .toEqual({
+        author: 'Edsger W. Dijkstra',
+        likes: 5
+      })
+  })
+
+  test('of list with multiple blogs to equal correct author and count', () => {
+    expect(listHelper.mostLikes(listWithMultipleBlogs))
+      .toEqual({
+        author: 'Edsger W. Dijkstra',
+        likes: 17
+      })
+  })
 })

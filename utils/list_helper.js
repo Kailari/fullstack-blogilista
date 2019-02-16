@@ -19,8 +19,49 @@ const favoriteBlog = (blogs) => {
   }
 }
 
+const mostBlogs = (blogs) => {
+  if (!blogs || blogs.length === 0) {
+    return null
+  }
+
+  const counts = blogs.reduce((result, blog) => {
+    return result.set(blog.author, (result.get(blog.author) || 0) + 1)
+  }, new Map())
+
+  const result = [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])[0]
+
+  return {
+    author: result[0],
+    blogs: result[1]
+  }
+}
+
+const mostLikes = (blogs) => {
+  if (!blogs || blogs.length === 0) {
+    return null
+  }
+
+  const counts = blogs.reduce((result, blog) => {
+    return result.set(blog.author, (result.get(blog.author) || 0) + blog.likes)
+  }, new Map())
+
+  const result = [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])[0]
+
+  // Technically we could .map before sort to make code more readable, but that
+  // would introduce an additional iteration over the result set so don't break
+  // down the key-value-pair(s) until here
+  return {
+    author: result[0],
+    likes: result[1]
+  }
+}
+
 module.exports = {
   dummy,
   totalLikes,
   favoriteBlog,
+  mostBlogs,
+  mostLikes,
 }
