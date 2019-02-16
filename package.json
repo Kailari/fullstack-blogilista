@@ -7,7 +7,7 @@
     "start": "node index.js",
     "watch": "nodemon index.js",
     "lint": "eslint .",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest --verbose"
   },
   "author": "Ilari Tommiska",
   "license": "MIT",
@@ -20,6 +20,7 @@
   },
   "devDependencies": {
     "eslint": "^5.14.0",
+    "jest": "^24.1.0",
     "nodemon": "^1.18.10"
   }
 }
