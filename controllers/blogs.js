@@ -1,28 +1,42 @@
 const blogsRouter = require('express').Router()
 const Blog = require('../models/blog')
+const User = require('../models/user')
 
 blogsRouter.get('/', async (request, response) => {
   try {
-    const blogs = await Blog.find({})
-    response.json(blogs)
+    const blogs = await Blog
+      .find({})
+      .populate('user', { username: 1, name: 1 })
+
+    return response.json(blogs)
   } catch (error) {
-    response.status(404).end()
+    return response.status(500).end()
   }
 })
 
 blogsRouter.post('/', async (request, response) => {
+  let user = null
+  try {
+    user = await User.findOne()
+  } catch (error) {
+    return response.status(404).json({ error: 'user not found' })
+  }
+
   const newBlog = request.body
   newBlog.likes = newBlog.likes || 0
   newBlog.author = newBlog.author === undefined ? 'unknown' : newBlog.author
+  newBlog.user = user._id
 
   const blogObj = new Blog(newBlog)
 
   try {
     const savedBlog = await blogObj.save()
-    response.status(201).json(savedBlog.toJSON())
+    user.blogs = user.blogs.concat(savedBlog._id)
+    await user.save()
+    return response.status(201).json(savedBlog.toJSON())
   }
   catch (error) {
-    response.status(400).json({ error: error.message })
+    return response.status(400).json({ error: error.message })
   }
 })
 

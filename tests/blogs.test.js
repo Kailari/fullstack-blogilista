@@ -29,11 +29,9 @@ describe('HTTP GET /api/blogs', () => {
   test('all initial blogs are within returned blogs', async () => {
     const response = await api.get('/api/blogs')
 
-    initialBlogs.concat().forEach(blog => {
-      blog.id = blog._id
-      delete blog._id
-      delete blog.__v
-      expect(response.body).toContainEqual(blog)
+    response.body.forEach(blog => {
+      delete blog.id
+      expect(initialBlogs).toContainEqual(blog)
     })
   })
 
