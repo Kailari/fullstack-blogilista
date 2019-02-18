@@ -50,7 +50,7 @@ const mostLikes = (blogs) => {
     .sort((a, b) => b[1] - a[1])[0]
 
   // Technically we could .map before sort to make code more readable, but that
-  // would introduce an additional iteration over the result set so don't break
+  // would introduce an additional iteration over the result set, so don't break
   // down the key-value-pair(s) until here
   return {
     author: result[0],
