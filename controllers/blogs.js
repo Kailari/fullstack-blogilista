@@ -1,3 +1,5 @@
+const jwt = require('jsonwebtoken')
+
 const blogsRouter = require('express').Router()
 const Blog = require('../models/blog')
 const User = require('../models/user')
@@ -15,21 +17,21 @@ blogsRouter.get('/', async (request, response) => {
 })
 
 blogsRouter.post('/', async (request, response) => {
-  let user = null
   try {
-    user = await User.findOne()
-  } catch (error) {
-    return response.status(404).json({ error: 'user not found' })
-  }
+    const decodedToken = jwt.verify(request.token, process.env.SECRET)
+    if (!request.token || !decodedToken.id) {
+      return response.status(401).json({ error: 'token missing or invalid' })
+    }
 
-  const newBlog = request.body
-  newBlog.likes = newBlog.likes || 0
-  newBlog.author = newBlog.author === undefined ? 'unknown' : newBlog.author
-  newBlog.user = user._id
+    const user = await User.findById(decodedToken.id)
 
-  const blogObj = new Blog(newBlog)
+    const newBlog = request.body
+    newBlog.likes = newBlog.likes || 0
+    newBlog.author = newBlog.author === undefined ? 'unknown' : newBlog.author
+    newBlog.user = user._id
 
-  try {
+    const blogObj = new Blog(newBlog)
+
     const savedBlog = await blogObj.save()
     user.blogs = user.blogs.concat(savedBlog._id)
     await user.save()
@@ -54,9 +56,9 @@ blogsRouter.put('/:id', async (request, response) => {
 
   try {
     const updatedBlog = await Blog.findByIdAndUpdate(request.params.id, blog, { new: true })
-    response.json(updatedBlog.toJSON())
+    return response.json(updatedBlog.toJSON())
   } catch (error) {
-    response.status(404).end()
+    return response.status(404).end()
   }
 })
 

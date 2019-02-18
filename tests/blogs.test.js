@@ -45,7 +45,14 @@ describe('HTTP GET /api/blogs', () => {
 
 
 describe('HTTP POST /api/blogs', async () => {
-  test('a valid POST-request adds a new blog', async () => {
+  test('a valid POST-request adds a new blog when token is valid', async () => {
+    const loginResponse = await api
+      .post('/api/login')
+      .send({ username: 'root', password: 'sekret' })
+      .expect(200)
+
+    const token = loginResponse.body.token
+
     const newBlog = {
       author: 'Jaska Jokunen',
       title: 'Kyllä minä niin mieleni pahoitin',
@@ -55,6 +62,7 @@ describe('HTTP POST /api/blogs', async () => {
 
     const response = await api
       .post('/api/blogs')
+      .set('Authorization', `Bearer ${token}`)
       .send(newBlog)
       .expect(201)
       .expect('Content-Type', /application\/json/)
@@ -67,6 +75,13 @@ describe('HTTP POST /api/blogs', async () => {
   })
 
   test('undefined likes is set to 0 on backend while adding', async () => {
+    const loginResponse = await api
+      .post('/api/login')
+      .send({ username: 'root', password: 'sekret' })
+      .expect(200)
+
+    const token = loginResponse.body.token
+
     const newBlog = {
       author: 'Jaska Jokunen',
       title: 'Kyllä minä niin mieleni pahoitin',
@@ -75,6 +90,7 @@ describe('HTTP POST /api/blogs', async () => {
 
     const response = await api
       .post('/api/blogs')
+      .set('Authorization', `Bearer ${token}`)
       .send(newBlog)
       .expect(201)
 

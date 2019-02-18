@@ -2,7 +2,7 @@ const bcrypt = require('bcrypt')
 const usersRouter = require('express').Router()
 const User = require('../models/user')
 
-usersRouter.get('/', async (request, response) => {
+usersRouter.get('/', async (request, response, next) => {
   try {
     const users = await User
       .find({})
@@ -10,11 +10,11 @@ usersRouter.get('/', async (request, response) => {
 
     return response.json(users)
   } catch (error) {
-    return response.status(500).end()
+    return next(error)
   }
 })
 
-usersRouter.post('/', async (request, response) => {
+usersRouter.post('/', async (request, response, next) => {
   const body = request.body
 
   if (body.password === undefined) {
@@ -38,7 +38,7 @@ usersRouter.post('/', async (request, response) => {
 
     return response.status(201).json(savedUser)
   } catch (error) {
-    return response.status(400).json({ error: error.message })
+    return next(error)
   }
 })
 

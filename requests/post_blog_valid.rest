@@ -1,9 +1,11 @@
 POST http://localhost:3001/api/blogs
 Content-Type: application/json
+Authorization: Bearer asd
 
 {
-    "title": "An Awesome Blog",
-    "author": "Awesome Person",
+    "title": "An Awesome Blog 2",
+    "author": "Another Awesome Person",
     "url": "http://wwww.iamawesome.blog",
+    "user": "5c6ac3f459264a59346c74b9",
     "likes": 666
 }
