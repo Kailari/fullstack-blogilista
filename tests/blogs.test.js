@@ -1,15 +1,28 @@
 const supertest = require('supertest')
 const mongoose = require('mongoose')
+const bcrypt = require('bcrypt')
 const app = require('../app')
 const api = supertest(app)
-const { initialBlogs, blogsInDb } = require('./test_helper')
+const { initialUsers, initialBlogs, blogsInDb, blogIdNotFound } = require('./test_helper')
 
 const Blog = require('../models/blog')
+const User = require('../models/user')
 
 beforeEach(async () => {
   await Blog.deleteMany({})
+  await User.deleteMany({})
+
+  for (let user of initialUsers) {
+    const saltRounds = 5 // these are for tests, compromise security for speed
+    user.passwordHash = await bcrypt.hash(user.password, saltRounds)
+    let userObj = new User(user)
+    await userObj.save()
+  }
+
+  const user = await User.findOne()
 
   for (let blog of initialBlogs) {
+    blog.user = user._id
     let blogObj = new Blog(blog)
     await blogObj.save()
   }
@@ -24,15 +37,6 @@ describe('HTTP GET /api/blogs', () => {
     const response = await api.get('/api/blogs')
 
     expect(response.body.length).toBe(initialBlogs.length)
-  })
-
-  test('all initial blogs are within returned blogs', async () => {
-    const response = await api.get('/api/blogs')
-
-    response.body.forEach(blog => {
-      delete blog.id
-      expect(initialBlogs).toContainEqual(blog)
-    })
   })
 
   test('blog identifier is named "id" not "_id"', async () => {
@@ -137,22 +141,50 @@ describe('HTTP POST /api/blogs', async () => {
 })
 
 describe('HTTP DELETE /api/blogs/:id', async () => {
-  test('succeeds with a valid id and number of blogs at the end is less than initially', async () => {
+  test('succeeds with a valid id/token and number of blogs at the end is less than initially', async () => {
+    const loginResponse = await api
+      .post('/api/login')
+      .send({ username: 'root', password: 'sekret' })
+      .expect(200)
+
+    const token = loginResponse.body.token
+
     const blogsAtStart = await blogsInDb()
     const blogToDelete = blogsAtStart[3]
 
     await api
       .delete(`/api/blogs/${blogToDelete.id}`)
+      .set('Authorization', `Bearer ${token}`)
       .expect(204)
 
     const blogsAtEnd = await blogsInDb()
     expect(blogsAtEnd.length).toBe(initialBlogs.length - 1)
   })
 
-  test('fails with 404 on an invalid id and the number of blogs does not change', async () => {
-    const idToRemove = 'this-id-does-not-exist'
+  test('fails with 401 on invalid token', async () => {
+    const blogsAtStart = await blogsInDb()
+    const blogToDelete = blogsAtStart[3]
+
     await api
-      .delete('/api/blogs/' + idToRemove)
+      .delete(`/api/blogs/${blogToDelete.id}`)
+      .expect(401)
+
+    const blogsAtEnd = await blogsInDb()
+    expect(blogsAtEnd.length).toBe(initialBlogs.length)
+  })
+
+  test('fails with 404 on an invalid id and the number of blogs does not change', async () => {
+    const loginResponse = await api
+      .post('/api/login')
+      .send({ username: 'root', password: 'sekret' })
+      .expect(200)
+
+    const token = loginResponse.body.token
+
+    const idToRemove = await blogIdNotFound()
+    await api
+      .delete(`/api/blogs/${idToRemove}`)
+      .set('Authorization', `Bearer ${token}`)
       .expect(404)
 
     const numAtEnd = (await blogsInDb()).length
@@ -161,7 +193,14 @@ describe('HTTP DELETE /api/blogs/:id', async () => {
 })
 
 describe('HTTP PUT /api/blogs/:id', async () => {
-  test('succeeds with a valid blog and data is updated', async () => {
+  test('succeeds with a valid blog/token and data is updated', async () => {
+    const loginResponse = await api
+      .post('/api/login')
+      .send({ username: 'root', password: 'sekret' })
+      .expect(200)
+
+    const token = loginResponse.body.token
+
     const blogsAtStart = await blogsInDb()
     const original = blogsAtStart[5]
 
@@ -174,6 +213,7 @@ describe('HTTP PUT /api/blogs/:id', async () => {
 
     const response = await api
       .put(`/api/blogs/${original.id}`)
+      .set('Authorization', `Bearer ${token}`)
       .send(updatedBlog)
       .expect(200)
       .expect('Content-Type', /application\/json/)
@@ -181,6 +221,26 @@ describe('HTTP PUT /api/blogs/:id', async () => {
     const blogFromDb = await Blog.findById(original.id)
     expect(response.body).toMatchObject(updatedBlog)
     expect(blogFromDb).toMatchObject(updatedBlog)
+  })
+
+  test('fails with 401 on an invalid token', async () => {
+    const blogsAtStart = await blogsInDb()
+    const original = blogsAtStart[5]
+
+    const updatedBlog = {
+      title: 'Type wars [UPDATED]',
+      author: 'Robert C. Martin',
+      url: 'http://blog.cleancoder.com/uncle-bob/2016/05/01/TypeWars.html',
+      likes: 10,
+    }
+
+    await api
+      .put(`/api/blogs/${original.id}`)
+      .send(updatedBlog)
+      .expect(401)
+
+    const blogFromDb = await Blog.findById(original.id)
+    expect(blogFromDb.toJSON()).toMatchObject(original)
   })
 
   test('fails with 404 on an invalid id', async () => {
@@ -194,8 +254,9 @@ describe('HTTP PUT /api/blogs/:id', async () => {
       likes: 10,
     }
 
+    const idToUpdate = await blogIdNotFound()
     await api
-      .put('/api/blogs/very-incorrect-id')
+      .put(`/api/blogs/${idToUpdate}`)
       .send(updatedBlog)
       .expect(404)
 

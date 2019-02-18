@@ -45,6 +45,16 @@ const blogsInDb = async () => {
   return blogs.map(blog => blog.toJSON())
 }
 
+const blogIdNotFound = async () => {
+  const blog = new Blog({ url: '_', title: 'asd' })
+  await blog.save()
+  await blog.remove()
+
+  return blog._id.toString()
+}
+
+
+
 const initialUsers = [
   {
     username: 'root',
@@ -59,6 +69,6 @@ const usersInDb = async () => {
 }
 
 module.exports = {
-  initialBlogs, blogsInDb,
+  initialBlogs, blogsInDb, blogIdNotFound,
   initialUsers, usersInDb,
 }
