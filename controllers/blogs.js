@@ -16,7 +16,7 @@ blogsRouter.get('/', async (request, response) => {
   }
 })
 
-blogsRouter.post('/', async (request, response) => {
+blogsRouter.post('/', async (request, response, next) => {
   try {
     const decodedToken = jwt.verify(request.token, process.env.SECRET)
     if (!request.token || !decodedToken.id) {
@@ -38,7 +38,7 @@ blogsRouter.post('/', async (request, response) => {
     return response.status(201).json(savedBlog.toJSON())
   }
   catch (error) {
-    return response.status(400).json({ error: error.message })
+    return next(error)
   }
 })
 

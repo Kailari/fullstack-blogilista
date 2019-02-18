@@ -74,6 +74,23 @@ describe('HTTP POST /api/blogs', async () => {
     expect(numAtEnd).toBe(initialBlogs.length + 1)
   })
 
+  test('a valid POST-request does nothing without a token', async () => {
+    const newBlog = {
+      author: 'Jaska Jokunen',
+      title: 'Kyllä minä niin mieleni pahoitin',
+      url: 'http://www.jaskanblog.fi/kylla_mina_niin_mieleni_pahoitin',
+      likes: 69
+    }
+
+    await api
+      .post('/api/blogs')
+      .send(newBlog)
+      .expect(401)
+
+    const numAtEnd = (await blogsInDb()).length
+    expect(numAtEnd).toBe(initialBlogs.length)
+  })
+
   test('undefined likes is set to 0 on backend while adding', async () => {
     const loginResponse = await api
       .post('/api/login')
@@ -99,6 +116,13 @@ describe('HTTP POST /api/blogs', async () => {
   })
 
   test('request without url/title results in status 400 "Bad request"', async () => {
+    const loginResponse = await api
+      .post('/api/login')
+      .send({ username: 'root', password: 'sekret' })
+      .expect(200)
+
+    const token = loginResponse.body.token
+
     const newBlog = {
       author: 'Jaska Jokunen',
       likes: 999
@@ -106,6 +130,7 @@ describe('HTTP POST /api/blogs', async () => {
 
     await api
       .post('/api/blogs')
+      .set('Authorization', `Bearer ${token}`)
       .send(newBlog)
       .expect(400)
   })
