@@ -75,7 +75,9 @@ blogsRouter.put('/:id', async (request, response, next) => {
       return response.status(401).json({ error: 'token missing or invalid' })
     }
 
-    const updatedBlog = await Blog.findByIdAndUpdate(request.params.id, newBlog, { new: true })
+    const updatedBlog = await Blog
+      .findByIdAndUpdate(request.params.id, newBlog, { new: true })
+      .populate('user', { username: 1, name: 1 })
     return response.json(updatedBlog.toJSON())
   } catch (error) {
     return next(error)
